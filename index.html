@@ -2,149 +2,194 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Chess Timer with Tick Sound</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fullscreen Chess Timer with Tap Sound</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    width: 100%;
-    overflow: hidden;
-    touch-action: manipulation;
     font-family: Arial, sans-serif;
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
   }
-  body { display: flex; flex-direction: column; }
 
-  .settings {
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
     background: #222;
-    color: white;
-    padding: 15px;
+    color: #fff;
+  }
+
+  .controls input {
+    width: 50px;
+    padding: 5px;
+    font-size: 1em;
+    margin-left: 5px;
     text-align: center;
   }
-  input[type="number"] {
-    width: 60px;
-    font-size: 1.2em;
-    padding: 5px;
-    margin: 0 5px;
+
+  .controls button {
+    padding: 8px 15px;
+    font-size: 1em;
+    margin-left: 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background: #444;
+    color: #fff;
   }
-  button { font-size: 1.2em; padding: 10px 20px; margin-left: 10px; cursor: pointer; }
+
+  .controls button:hover { background: #666; }
+  .hidden { display: none; }
 
   .player {
     flex: 1;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-size: 8vw;
-    color: white;
+    font-size: 3em;
     cursor: pointer;
-    transition: background 0.3s;
     user-select: none;
+    transition: background 0.2s;
   }
-   #player1 { background: #10eb09; }
-  #player2 { background: #e28307; }
-  .active { background: rgb(58, 18, 238); color: rgb(63, 4, 18); }
+
+  .active { background: #08aa08; }
+  .inactive { background: #ffffff; }
+
+  .player h2 { margin: 0; font-size: 1em; }
+  .player p { margin: 0; font-size: 2em; }
 </style>
 </head>
 <body>
 
-<div class="settings" id="settings">
-  <label>Minutes: <input type="number" id="minutesInput" min="0" value="5"></label>
-  <label>Seconds: <input type="number" id="secondsInput" min="0" max="59" value="0"></label>
-  <button onclick="startCustomTimer()">Start</button>
+<!-- Top Controls -->
+<div class="controls" id="controlPanel">
+  <div>
+    Minutes: <input type="number" id="minutesInput" value="5" min="0" max="180">
+    Seconds: <input type="number" id="secondsInput" value="0" min="0" max="59">
+  </div>
+  <div>
+    <button id="startBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+  </div>
 </div>
 
-<div id="player1" class="player">05:00</div>
-<div id="player2" class="player">05:00</div>
+<!-- Players -->
+<div id="player1" class="player active">
 
-<!-- Tick sound -->
-<audio id="tickSound" src="beep.ogg" preload="auto"></audio>
+  <p id="time1">05:00</p>
+</div>
+<div id="player2" class="player inactive">
+  <p id="time2">05:00</p>
+</div>
+
+<!-- Tap sound -->
+<audio id="tapSound" src="beep.ogg" preload="auto"></audio>
 
 <script>
-let player1Time = 5 * 60;
-let player2Time = 5 * 60;
-let activePlayer = 0;
-let interval = null;
-let firstMoveDone = false;
+  let time1 = 5*60;
+  let time2 = 5*60;
+  let activePlayer = 1;
+  let timer = null;
+  let isRunning = false;
 
-// Format seconds to mm:ss
-function formatTime(seconds) {
-  const min = Math.floor(seconds / 60);
-  const sec = seconds % 60;
-  return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
-}
+  const time1Display = document.getElementById('time1');
+  const time2Display = document.getElementById('time2');
+  const player1Div = document.getElementById('player1');
+  const player2Div = document.getElementById('player2');
+  const controlPanel = document.getElementById('controlPanel');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const minutesInput = document.getElementById('minutesInput');
+  const secondsInput = document.getElementById('secondsInput');
+  const tapSound = document.getElementById('tapSound');
 
-// Update timers
-function updateTimer() {
-  if(activePlayer === 1 && player1Time > 0) player1Time--;
-  else if(activePlayer === 2 && player2Time > 0) player2Time--;
-
-  document.getElementById("player1").textContent = formatTime(player1Time);
-  document.getElementById("player2").textContent = formatTime(player2Time);
-
-  if(player1Time === 0 || player2Time === 0) {
-    clearInterval(interval);
-    alert("Time's up!");
-  }
-}
-
-// Switch active player and play tick
-function switchPlayer(player) {
-  const tick = document.getElementById("tickSound");
-  tick.currentTime = 0;
-  tick.play();
-
-  if(!firstMoveDone) {
-    // First move: opposite player starts
-    activePlayer = player === 1 ? 2 : 1;
-    firstMoveDone = true;
-  } else {
-    activePlayer = player;
+  function formatTime(seconds) {
+    const m = Math.floor(seconds/60).toString().padStart(2,'0');
+    const s = (seconds%60).toString().padStart(2,'0');
+    return `${m}:${s}`;
   }
 
-  clearInterval(interval);
-  interval = setInterval(updateTimer, 1000);
+  function updateDisplay() {
+    time1Display.textContent = formatTime(time1);
+    time2Display.textContent = formatTime(time2);
+  }
 
-  document.getElementById("player1").classList.toggle("active", activePlayer === 1);
-  document.getElementById("player2").classList.toggle("active", activePlayer === 2);
-}
+  function switchPlayer() {
+    activePlayer = activePlayer===1?2:1;
+    player1Div.classList.toggle('active');
+    player1Div.classList.toggle('inactive');
+    player2Div.classList.toggle('active');
+    player2Div.classList.toggle('inactive');
 
-// Start timer with user input
-function startCustomTimer() {
-  const minutes = parseInt(document.getElementById("minutesInput").value) || 5;
-  const seconds = parseInt(document.getElementById("secondsInput").value) || 0;
-  player1Time = minutes * 60 + seconds;
-  player2Time = minutes * 60 + seconds;
-  activePlayer = 0;
-  firstMoveDone = false;
-  clearInterval(interval);
+    // Play tap sound
+    tapSound.currentTime = 0;
+    tapSound.play();
+  }
 
-  document.getElementById("player1").textContent = formatTime(player1Time);
-  document.getElementById("player2").textContent = formatTime(player2Time);
-  document.getElementById("player1").classList.remove("active");
-  document.getElementById("player2").classList.remove("active");
+  function tick() {
+    if (!isRunning) return;
+    if (activePlayer===1) {
+      if(time1>0) time1--;
+      else { stopGame(); alert("Player 2 wins!"); }
+    } else {
+      if(time2>0) time2--;
+      else { stopGame(); alert("Player 1 wins!"); }
+    }
+    updateDisplay();
+  }
 
-  document.getElementById("settings").style.display = "none";
-  goFullScreen();
-}
+  function startGame() {
+    let minutes = parseInt(minutesInput.value);
+    let seconds = parseInt(secondsInput.value);
+    if (isNaN(minutes) || minutes < 0) minutes = 0;
+    if (isNaN(seconds) || seconds < 0 || seconds > 59) seconds = 0;
+    time1 = time2 = minutes*60 + seconds;
+    activePlayer = 1;
+    player1Div.classList.add('active'); player1Div.classList.remove('inactive');
+    player2Div.classList.add('inactive'); player2Div.classList.remove('active');
+    updateDisplay();
+    isRunning = true;
+    timer = setInterval(tick,1000);
+    controlPanel.classList.add('hidden');
+    openFullscreen();
+  }
 
-// Touch/click events
-document.getElementById("player1").addEventListener("touchstart", ()=>switchPlayer(1));
-document.getElementById("player2").addEventListener("touchstart", ()=>switchPlayer(2));
-document.getElementById("player1").addEventListener("click", ()=>switchPlayer(1));
-document.getElementById("player2").addEventListener("click", ()=>switchPlayer(2));
+  function stopGame() {
+    clearInterval(timer);
+    isRunning = false;
+    controlPanel.classList.remove('hidden');
+  }
 
-// Fullscreen function for iOS & Android
-function goFullScreen() {
-  const elem = document.documentElement;
-  if (elem.requestFullscreen) elem.requestFullscreen();
-  else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-  else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-}
+  function resetGame() {
+    stopGame();
+    let minutes = parseInt(minutesInput.value) || 5;
+    let seconds = parseInt(secondsInput.value) || 0;
+    time1 = time2 = minutes*60 + seconds;
+    activePlayer = 1;
+    player1Div.classList.add('active'); player1Div.classList.remove('inactive');
+    player2Div.classList.add('inactive'); player2Div.classList.remove('active');
+    updateDisplay();
+  }
 
-// Auto fullscreen on first interaction
-document.body.addEventListener("touchstart", goFullScreen, {once: true});
-document.body.addEventListener("click", goFullScreen, {once: true});
+  player1Div.addEventListener('click',()=>{ if(isRunning && activePlayer===1) switchPlayer(); });
+  player2Div.addEventListener('click',()=>{ if(isRunning && activePlayer===2) switchPlayer(); });
+  startBtn.addEventListener('click', startGame);
+  resetBtn.addEventListener('click', resetGame);
+
+  updateDisplay();
+
+  function openFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) { elem.requestFullscreen(); }
+    else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+    else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+  }
 </script>
 
 </body>
