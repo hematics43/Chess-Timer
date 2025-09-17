@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Full Screen Chess Timer</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+  }
+  .player {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 8vw;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+    user-select: none;
+  }
+  #player1 { background: #222; }
+  #player2 { background: #444; }
+  .active { background: #0f0; color: black; }
+</style>
+</head>
+<body>
+
+<div id="player1" class="player">05:00</div>
+<div id="player2" class="player">05:00</div>
+
+<script>
+let player1Time = 5 * 60;
+let player2Time = 5 * 60;
+let activePlayer = 0;
+let interval = null;
+
+// Format time as mm:ss
+function formatTime(seconds) {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+}
+
+function updateTimer() {
+  if(activePlayer === 1 && player1Time > 0) player1Time--;
+  else if(activePlayer === 2 && player2Time > 0) player2Time--;
+
+  document.getElementById("player1").textContent = formatTime(player1Time);
+  document.getElementById("player2").textContent = formatTime(player2Time);
+
+  if(player1Time === 0 || player2Time === 0) {
+    clearInterval(interval);
+    alert("Time's up!");
+  }
+}
+
+// Switch active player
+function switchPlayer(player) {
+  if(activePlayer === player) return;
+  activePlayer = player;
+  clearInterval(interval);
+  interval = setInterval(updateTimer, 1000);
+
+  document.getElementById("player1").classList.toggle("active", player === 1);
+  document.getElementById("player2").classList.toggle("active", player === 2);
+}
+
+// Event listeners for clicks/taps
+document.getElementById("player1").addEventListener("touchstart", ()=>switchPlayer(1));
+document.getElementById("player2").addEventListener("touchstart", ()=>switchPlayer(2));
+document.getElementById("player1").addEventListener("click", ()=>switchPlayer(1));
+document.getElementById("player2").addEventListener("click", ()=>switchPlayer(2));
+
+// Auto full screen request for mobile
+function goFullScreen() {
+  const elem = document.documentElement;
+  if (elem.requestFullscreen) elem.requestFullscreen();
+  else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen(); // Safari/iOS
+  else if (elem.msRequestFullscreen) elem.msRequestFullscreen(); // IE/Edge
+}
+
+// Trigger full screen on first tap
+document.body.addEventListener("touchstart", goFullScreen, {once: true});
+document.body.addEventListener("click", goFullScreen, {once: true});
+</script>
+
+</body>
+</html>
