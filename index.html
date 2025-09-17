@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Full Screen Chess Timer</title>
+<title>Chess Timer with Minutes & Seconds</title>
 <style>
   html, body {
     margin: 0;
@@ -12,29 +12,47 @@
     width: 100%;
     overflow: hidden;
     touch-action: manipulation;
-  }
-  body {
-    display: flex;
-    flex-direction: column;
     font-family: Arial, sans-serif;
   }
+  body { display: flex; flex-direction: column; }
+
+  .settings {
+    background: #222;
+    color: white;
+    padding: 15px;
+    text-align: center;
+  }
+  input[type="number"] {
+    width: 60px;
+    font-size: 1.2em;
+    padding: 5px;
+    margin: 0 5px;
+  }
+  button { font-size: 1.2em; padding: 10px 20px; margin-left: 10px; cursor: pointer; }
+
   .player {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 8vw;
-    color: white;
+    color: rgb(201, 7, 7);
     cursor: pointer;
     transition: background 0.3s;
     user-select: none;
   }
-  #player1 { background: #222; }
-  #player2 { background: #444; }
-  .active { background: #0f0; color: black; }
+  #player1 { background: #10eb09; }
+  #player2 { background: #e28307; }
+  .active { background: rgb(58, 18, 238); color: rgb(63, 4, 18); }
 </style>
 </head>
 <body>
+
+<div class="settings" id="settings">
+  <label>Minutes: <input type="number" id="minutesInput" min="0" value="5"></label>
+  <label>Seconds: <input type="number" id="secondsInput" min="0" max="59" value="0"></label>
+  <button onclick="startCustomTimer()">Start</button>
+</div>
 
 <div id="player1" class="player">05:00</div>
 <div id="player2" class="player">05:00</div>
@@ -45,13 +63,14 @@ let player2Time = 5 * 60;
 let activePlayer = 0;
 let interval = null;
 
-// Format time as mm:ss
+// Format seconds to mm:ss
 function formatTime(seconds) {
   const min = Math.floor(seconds / 60);
   const sec = seconds % 60;
   return `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
 }
 
+// Update timer display
 function updateTimer() {
   if(activePlayer === 1 && player1Time > 0) player1Time--;
   else if(activePlayer === 2 && player2Time > 0) player2Time--;
@@ -76,21 +95,42 @@ function switchPlayer(player) {
   document.getElementById("player2").classList.toggle("active", player === 2);
 }
 
-// Event listeners for clicks/taps
+// Start timer with user input
+function startCustomTimer() {
+  const minutes = parseInt(document.getElementById("minutesInput").value) || 5;
+  const seconds = parseInt(document.getElementById("secondsInput").value) || 0;
+  player1Time = minutes * 60 + seconds;
+  player2Time = minutes * 60 + seconds;
+  activePlayer = 0;
+  clearInterval(interval);
+
+  document.getElementById("player1").textContent = formatTime(player1Time);
+  document.getElementById("player2").textContent = formatTime(player2Time);
+  document.getElementById("player1").classList.remove("active");
+  document.getElementById("player2").classList.remove("active");
+
+  // Hide settings
+  document.getElementById("settings").style.display = "none";
+
+  // Auto fullscreen
+  goFullScreen();
+}
+
+// Touch/click events for each half
 document.getElementById("player1").addEventListener("touchstart", ()=>switchPlayer(1));
 document.getElementById("player2").addEventListener("touchstart", ()=>switchPlayer(2));
 document.getElementById("player1").addEventListener("click", ()=>switchPlayer(1));
 document.getElementById("player2").addEventListener("click", ()=>switchPlayer(2));
 
-// Auto full screen request for mobile
+// Fullscreen function for iOS & Android
 function goFullScreen() {
   const elem = document.documentElement;
   if (elem.requestFullscreen) elem.requestFullscreen();
-  else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen(); // Safari/iOS
-  else if (elem.msRequestFullscreen) elem.msRequestFullscreen(); // IE/Edge
+  else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+  else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
 }
 
-// Trigger full screen on first tap
+// Auto fullscreen on first interaction
 document.body.addEventListener("touchstart", goFullScreen, {once: true});
 document.body.addEventListener("click", goFullScreen, {once: true});
 </script>
