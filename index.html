@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fullscreen Chess Timer with Tap Sound</title>
+<title>Fullscreen Chess Timer with Move Counter</title>
 <style>
   html, body {
     margin: 0;
@@ -58,11 +58,12 @@
     transition: background 0.2s;
   }
 
-  .active { background: #08aa08; }
-  .inactive { background: #ffffff; }
+  .active { background: hsl(147, 91%, 46%); }
+  .inactive { background: hwb(0 99% 1%); }
 
   .player h2 { margin: 0; font-size: 1em; }
-  .player p { margin: 0; font-size: 2em; }
+  .player p { margin: 5px 0; }
+  .move-counter { font-size: 1em; color: #555; }
 </style>
 </head>
 <body>
@@ -81,11 +82,12 @@
 
 <!-- Players -->
 <div id="player1" class="player active">
-
   <p id="time1">05:00</p>
+  <div class="move-counter">Moves: <span id="moves1">0</span></div>
 </div>
 <div id="player2" class="player inactive">
   <p id="time2">05:00</p>
+  <div class="move-counter">Moves: <span id="moves2">0</span></div>
 </div>
 
 <!-- Tap sound -->
@@ -98,8 +100,13 @@
   let timer = null;
   let isRunning = false;
 
+  let moves1 = 0;
+  let moves2 = 0;
+
   const time1Display = document.getElementById('time1');
   const time2Display = document.getElementById('time2');
+  const moves1Display = document.getElementById('moves1');
+  const moves2Display = document.getElementById('moves2');
   const player1Div = document.getElementById('player1');
   const player2Div = document.getElementById('player2');
   const controlPanel = document.getElementById('controlPanel');
@@ -118,9 +125,16 @@
   function updateDisplay() {
     time1Display.textContent = formatTime(time1);
     time2Display.textContent = formatTime(time2);
+    moves1Display.textContent = moves1;
+    moves2Display.textContent = moves2;
   }
 
   function switchPlayer() {
+    // Count moves
+    if(activePlayer===1) moves1++;
+    else moves2++;
+
+    // Toggle active player
     activePlayer = activePlayer===1?2:1;
     player1Div.classList.toggle('active');
     player1Div.classList.toggle('inactive');
@@ -130,6 +144,8 @@
     // Play tap sound
     tapSound.currentTime = 0;
     tapSound.play();
+
+    updateDisplay();
   }
 
   function tick() {
@@ -150,6 +166,7 @@
     if (isNaN(minutes) || minutes < 0) minutes = 0;
     if (isNaN(seconds) || seconds < 0 || seconds > 59) seconds = 0;
     time1 = time2 = minutes*60 + seconds;
+    moves1 = moves2 = 0;
     activePlayer = 1;
     player1Div.classList.add('active'); player1Div.classList.remove('inactive');
     player2Div.classList.add('inactive'); player2Div.classList.remove('active');
@@ -168,9 +185,10 @@
 
   function resetGame() {
     stopGame();
-    let minutes = parseInt(minutesInput.value) || 5;
-    let seconds = parseInt(secondsInput.value) || 0;
+    let minutes = parseInt(minutesInput.value)||5;
+    let seconds = parseInt(secondsInput.value)||0;
     time1 = time2 = minutes*60 + seconds;
+    moves1 = moves2 = 0;
     activePlayer = 1;
     player1Div.classList.add('active'); player1Div.classList.remove('inactive');
     player2Div.classList.add('inactive'); player2Div.classList.remove('active');
